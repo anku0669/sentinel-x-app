@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="PentaForge security assessment control panel">
+  <title>PentaForge | Security Assessment</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="mark">PF</span><div><strong>PentaForge</strong><small>Security Assessment Control Plane</small></div></div>
+      <a class="github" href="https://github.com/anku0669/sentinel-x-app" target="_blank" rel="noreferrer">GitHub ↗</a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">AUTHORIZED ASSESSMENTS</p>
+          <h1>One target. One command.<br><span>50 assessment modules.</span></h1>
+          <p class="lede">Normalize an IP, hostname, FQDN, URL, IPv6 address, or bounded CIDR into a single assessment plan.</p>
+        </div>
+        <div class="status-card"><span class="dot"></span><div><strong>Control plane online</strong><small>Browser UI · scanner runs locally</small></div></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><div><h2>Target</h2><p>Enter one target or a comma-separated scope.</p></div><span class="badge">SAFE MODE</span></div>
+        <label for="targets">Target scope</label>
+        <input id="targets" autocomplete="off" placeholder="example.com, 10.10.10.5, https://portal.example.com, 10.10.10.0/28">
+        <div class="controls">
+          <select id="profile"><option value="fast">Fast profile</option><option value="full">Full TCP profile</option></select>
+          <input id="maxHosts" type="number" min="1" max="4096" value="64" title="CIDR host limit">
+          <button id="normalize">Normalize scope</button>
+        </div>
+        <div id="scope" class="scope hidden"></div>
+        <div class="actions">
+          <button class="primary" id="command">Generate command</button>
+          <button class="secondary" id="copy">Copy</button>
+        </div>
+        <pre id="terminal" class="terminal">./pentaforge TARGET --authorized</pre>
+        <p class="fineprint">The hosted page does not execute network scanners from your browser. Use the generated command with the PentaForge backend/CLI on a machine you control.</p>
+      </section>
+
+      <section class="grid">
+        <article class="card"><span class="icon">01</span><h3>Network</h3><p>Nmap, RustScan, Naabu, Masscan, UDP and service discovery.</p></article>
+        <article class="card"><span class="icon">02</span><h3>Web</h3><p>HTTPX, Nuclei, Nikto, WhatWeb, Katana, FFUF and content discovery.</p></article>
+        <article class="card"><span class="icon">03</span><h3>Protocols</h3><p>SMB, LDAP, SNMP, RPC, SSH, RDP, FTP, SMTP and database checks.</p></article>
+        <article class="card"><span class="icon">04</span><h3>Evidence</h3><p>Structured JSON, Markdown summaries and raw per-module output.</p></article>
+      </section>
+
+      <section class="module-strip"><div><strong>50</strong><span>modules</span></div><div><strong>6</strong><span>target formats</span></div><div><strong>64</strong><span>CIDR hosts by default</span></div><div><strong>0</strong><span>credential attacks</span></div></section>
+    </main>
+
+    <footer><span>PentaForge · authorized security testing only</span><a href="SECURITY.md">Security policy</a></footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
