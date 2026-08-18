@@ -76,7 +76,7 @@ FTP scripts, SMTP scripts, RDP scripts, VNC scripts, MySQL information, Redis in
 
 - Python 3.9+
 - Linux/macOS recommended
-- Any subset of the external CLI tools listed in `modules.json`
+- Any subset of the external CLI tools listed in `check_tools.py`
 
 PentaForge does **not** require Python packages for its controller. External scanners are optional. Run `./check_tools.py` to see what is installed.
 
