@@ -15,14 +15,16 @@ jobs:
       - name: Compile Python files
         run: python -m py_compile pentaforge.py check_tools.py
       - name: Check module inventory
-        run: python - <<'PY'
+        run: |
+          python - <<'PY'
           import ast
-          tree=ast.parse(open('pentaforge.py').read())
-          modules=[]
+          tree = ast.parse(open('pentaforge.py').read())
+          modules = []
           for n in tree.body:
               if isinstance(n, ast.Assign):
                   for t in n.targets:
-                      if isinstance(t, ast.Name) and t.id=='MODULES': modules=ast.literal_eval(n.value)
-          assert len(modules)==50, len(modules)
+                      if isinstance(t, ast.Name) and t.id == 'MODULES':
+                          modules = ast.literal_eval(n.value)
+          assert len(modules) == 50, len(modules)
           print('50 modules validated')
           PY
