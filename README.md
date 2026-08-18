@@ -6,6 +6,10 @@ PentaForge is a Python-based orchestration layer for authorized penetration test
 
 > **Authorization required:** PentaForge is designed for systems you own or are explicitly authorized to assess. The `--authorized` flag is required before a scan can start.
 
+## Web control panel
+
+The repository includes a browser-based control panel designed for GitHub Pages. It normalizes target input and generates the correct local PentaForge command. The hosted page does **not** execute Nmap, Nuclei, or other network scanners from a user's browser. Actual assessment execution remains on the authorized operator's machine/backend.
+
 ## Target types
 
 | Input | Example | Supported |
@@ -29,8 +33,9 @@ CIDR expansion is capped at 64 hosts by default. Use `--max-hosts` to change it,
 - **Graceful tool detection**: missing tools are reported and skipped.
 - **Raw evidence preserved** as per-module output files.
 - **JSON + Markdown reporting** for automation and human review.
+- **Web control panel** for target normalization and command generation.
+- **GitHub Pages deployment workflow** included.
 - **Safe default design** with no brute force, password spraying, persistence, exploit execution, payload delivery, or DoS functionality.
-- **CI validation** for the Python controller and module inventory.
 
 ## Usage
 
@@ -78,18 +83,20 @@ Increase the host limit when appropriate:
 ./pentaforge example.com --authorized --profile full
 ```
 
-### Tune execution
+## Web deployment
 
-```bash
-./pentaforge example.com --authorized --workers 8 --timeout 180
-```
+The repository contains `.github/workflows/pages.yml`, which deploys the static control panel to GitHub Pages after pushes to `main`.
+
+After enabling **Settings → Pages → GitHub Actions** in the repository, the site is served from the repository's GitHub Pages URL.
+
+The UI is intentionally a control plane, not a browser-based scanner. Browsers cannot directly run privileged native tools such as Nmap or Nuclei, and exposing an unauthenticated scanning backend would be a spectacularly bad idea.
 
 ## Architecture
 
 ```text
                          +----------------------+
                          |      PentaForge      |
-                         |         CLI          |
+                         |      Web / CLI       |
                          +----------+-----------+
                                     |
                            Target Normalizer
@@ -174,8 +181,6 @@ reports/<timestamp>/
 └── <target>_<module>.stderr.txt
 ```
 
-`REPORT.md` contains normalized targets and module status. `summary.json` contains structured run metadata and verification hints. `results.json` contains the complete module execution results.
-
 ## Profiles
 
 | Profile | Port scope | Intended use |
@@ -201,14 +206,14 @@ This is not a guarantee that an individual third-party scanner is harmless in ev
 ## Roadmap
 
 - Intelligent module selection based on discovered ports/services.
-- DNS resolution and subdomain discovery as an explicit, controlled phase.
+- DNS resolution and controlled subdomain discovery as an explicit phase.
 - CVSS/CWE normalization and deduplication.
-- Web dashboard with live task status.
-- SQLite result store and historical comparison.
+- Authenticated backend/API for authorized remote execution.
+- Live task status and historical results.
+- SQLite result store.
 - Pluggable scanners with per-tool schemas.
 - SARIF and HTML export.
 - Scope files and rate-limit policies.
-- Optional authenticated assessment profiles behind explicit configuration.
 
 ## Project status
 
