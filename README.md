@@ -2,14 +2,29 @@
 
 **One target. One command. Fifty security assessment modules.**
 
-PentaForge is a Python-based orchestration layer for authorized penetration testing and network security assessment. Give it a single IP address and it coordinates reconnaissance, port scanning, service enumeration, web discovery, TLS checks, protocol enumeration, vulnerability scanning, and result collection into one report directory.
+PentaForge is a Python-based orchestration layer for authorized penetration testing and network security assessment. It normalizes IP addresses, IPv6, hostnames/FQDNs, URLs, CIDR ranges, and comma-separated target lists, then coordinates reconnaissance, port scanning, service enumeration, web discovery, TLS checks, protocol enumeration, vulnerability scanning, and result collection.
 
 > **Authorization required:** PentaForge is designed for systems you own or are explicitly authorized to assess. The `--authorized` flag is required before a scan can start.
+
+## Target types
+
+| Input | Example | Supported |
+| --- | --- | --- |
+| IPv4 | `192.168.1.10` | Yes |
+| IPv6 | `2001:db8::10` | Yes |
+| Hostname / FQDN | `server.example.com` | Yes |
+| HTTP URL | `http://example.com/login` | Yes |
+| HTTPS URL | `https://example.com/app` | Yes |
+| CIDR | `192.168.1.0/28` | Yes, bounded |
+| Multiple targets | `10.0.0.5,web.example.com,10.0.0.0/30` | Yes |
+
+CIDR expansion is capped at 64 hosts by default. Use `--max-hosts` to change it, with a hard ceiling of 4096 hosts per invocation.
 
 ## Features
 
 - **50 integrated modules** exposed through one controller.
-- **Single-IP workflow** with fast and full profiles.
+- **Multiple target types** with automatic target normalization.
+- **Single target, CIDR, URL, or mixed-target workflows.**
 - **Parallel execution** with configurable worker count.
 - **Graceful tool detection**: missing tools are reported and skipped.
 - **Raw evidence preserved** as per-module output files.
@@ -17,33 +32,90 @@ PentaForge is a Python-based orchestration layer for authorized penetration test
 - **Safe default design** with no brute force, password spraying, persistence, exploit execution, payload delivery, or DoS functionality.
 - **CI validation** for the Python controller and module inventory.
 
+## Usage
+
+### IP address
+
+```bash
+./pentaforge 192.168.1.10 --authorized
+```
+
+### Hostname / FQDN
+
+```bash
+./pentaforge example.com --authorized
+```
+
+### URL
+
+```bash
+./pentaforge https://example.com/login --authorized
+```
+
+The URL is preserved for web modules while the hostname is used for network/service modules.
+
+### CIDR range
+
+```bash
+./pentaforge 192.168.1.0/28 --authorized
+```
+
+Increase the host limit when appropriate:
+
+```bash
+./pentaforge 10.10.10.0/24 --authorized --max-hosts 256
+```
+
+### Multiple targets
+
+```bash
+./pentaforge '10.10.10.5,web.example.com,https://portal.example.com' --authorized
+```
+
+### Full TCP profile
+
+```bash
+./pentaforge example.com --authorized --profile full
+```
+
+### Tune execution
+
+```bash
+./pentaforge example.com --authorized --workers 8 --timeout 180
+```
+
 ## Architecture
 
 ```text
-                     +-------------------+
-                     |    PentaForge     |
-                     |      CLI          |
-                     +---------+---------+
-                               |
-               +---------------+---------------+
-               |                               |
-        Tool availability               Target profile
-               |                               |
-               +---------------+---------------+
-                               |
-                     +---------v---------+
-                     | Parallel Runner   |
-                     +---------+---------+
-                               |
-        +----------------------+----------------------+
-        |                      |                      |
-   Network recon          Web recon              Service checks
-        |                      |                      |
-        +----------------------+----------------------+
-                               |
-                     +---------v---------+
-                     | Evidence + Report |
-                     +-------------------+
+                         +----------------------+
+                         |      PentaForge      |
+                         |         CLI          |
+                         +----------+-----------+
+                                    |
+                           Target Normalizer
+                                    |
+                +-------------------+-------------------+
+                |                   |                   |
+             IP/IPv6             Hostname              URL
+                |                   |                   |
+                +-------------------+-------------------+
+                                    |
+                             CIDR Expansion
+                              (bounded)
+                                    |
+                         +----------v-----------+
+                         | Parallel Module Run  |
+                         +----------+-----------+
+                                    |
+          +-------------------------+-------------------------+
+          |                         |                         |
+     Network Recon             Web Recon              Service Checks
+          |                         |                         |
+          +-------------------------+-------------------------+
+                                    |
+                         +----------v-----------+
+                         | Evidence + Reports   |
+                         +-----------------------+
 ```
 
 ## 50 modules
@@ -76,7 +148,7 @@ FTP scripts, SMTP scripts, RDP scripts, VNC scripts, MySQL information, Redis in
 
 - Python 3.9+
 - Linux/macOS recommended
-- Any subset of the external CLI tools listed in `check_tools.py`
+- Any subset of the external CLI tools detected by `check_tools.py`
 
 PentaForge does **not** require Python packages for its controller. External scanners are optional. Run `./check_tools.py` to see what is installed.
 
@@ -89,44 +161,20 @@ cd sentinel-x-app
 ./check_tools.py
 ```
 
-### Debian/Kali example
-
-Install the scanners you actually use through your distribution or the upstream projects, then let PentaForge detect them. Do not install every tool blindly; some have large rule sets or wordlists.
-
-## Usage
-
-Fast profile:
-
-```bash
-./pentaforge 192.168.1.10 --authorized
-```
-
-Full TCP range:
-
-```bash
-./pentaforge 192.168.1.10 --authorized --profile full
-```
-
-More workers and a longer per-tool timeout:
-
-```bash
-./pentaforge 192.168.1.10 --authorized --workers 8 --timeout 180
-```
-
 ## Output
 
-Each run creates:
+Each run creates a timestamped directory:
 
 ```text
-reports/<target>/<timestamp>/
+reports/<timestamp>/
 ├── REPORT.md
 ├── summary.json
 ├── results.json
-├── <module>.stdout.txt
-└── <module>.stderr.txt
+├── <target>_<module>.stdout.txt
+└── <target>_<module>.stderr.txt
 ```
 
-`REPORT.md` is a human-readable overview. `results.json` contains the full structured execution results. Raw stdout/stderr files preserve the evidence generated by each module.
+`REPORT.md` contains normalized targets and module status. `summary.json` contains structured run metadata and verification hints. `results.json` contains the complete module execution results.
 
 ## Profiles
 
@@ -137,20 +185,23 @@ reports/<target>/<timestamp>/
 
 ## Safety model
 
-PentaForge intentionally focuses on discovery and verification. The controller blocks obvious credential-attack and denial-of-service tool tokens and requires explicit `--authorized` confirmation.
+PentaForge focuses on discovery and verification. The controller requires explicit `--authorized` confirmation and blocks obvious credential-attack and denial-of-service tool tokens.
 
-This is not a guarantee that an individual third-party scanner is harmless in every configuration. Always review tool flags, scope, and rate limits before assessment.
+This is not a guarantee that an individual third-party scanner is harmless in every configuration. Always review tool flags, target scope, and rate limits before assessment.
 
-## Limitations
+## Important limitations
 
-- The first release accepts a **single IP address** rather than CIDR ranges or hostnames.
+- Hostname input does not magically discover every IP behind a domain. PentaForge scans the hostname through the selected tools and lets those tools resolve it.
+- A URL path is preserved for web-oriented modules, while the hostname is used for network modules.
+- CIDR ranges are expanded locally and bounded to avoid accidental large-scale scans.
+- Finding normalization produces **verification hints**, not confirmed vulnerabilities.
 - Third-party tools must be installed separately.
-- The finding normalizer is intentionally conservative and marks keyword hits as **verification hints**, not confirmed vulnerabilities.
 - Full exploitation and post-exploitation are deliberately outside the default orchestration layer.
 
 ## Roadmap
 
 - Intelligent module selection based on discovered ports/services.
+- DNS resolution and subdomain discovery as an explicit, controlled phase.
 - CVSS/CWE normalization and deduplication.
 - Web dashboard with live task status.
 - SQLite result store and historical comparison.
@@ -161,7 +212,7 @@ This is not a guarantee that an individual third-party scanner is harmless in ev
 
 ## Project status
 
-PentaForge is an early orchestration framework. It is useful for reducing repetitive terminal work, but it should not be treated as an autonomous oracle that proves a host is secure or insecure.
+PentaForge is an early orchestration framework. It reduces repetitive terminal work, but it should not be treated as an autonomous oracle that proves a host is secure or insecure.
 
 ## License
 
